@@ -11,8 +11,7 @@ function App() {
 
   const [medicines, setMedicines] = useState([]);
 
-  const API = "http://localhost:5000";
-
+const API = "https://medicine-tracker-backend-g4ox.onrender.com";
   // REGISTER
   const register = async () => {
     const res = await fetch(`${API}/register`, {
