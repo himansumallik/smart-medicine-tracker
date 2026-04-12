@@ -142,6 +142,12 @@ function Homepage({ userId }) {
       fontSize: "18px",
       marginTop: "8px",
     },
+    sessionInfo: {
+      fontSize: "14px",
+      color: "#777",
+      margin: "5px 0 20px 0",
+      fontStyle: "italic",
+    },
     dashboard: {
       display: "flex",
       gap: "15px",
@@ -246,6 +252,11 @@ function Homepage({ userId }) {
         <p style={styles.welcome}>
           Welcome back, <strong>{localStorage.getItem("name")}</strong> 👋
         </p>
+        {localStorage.getItem("sessionStart") && (
+          <p style={styles.sessionInfo}>
+            Session started: {new Date(parseInt(localStorage.getItem("sessionStart"))).toLocaleString()}
+          </p>
+        )}
       </div>
 
       {error && <div style={styles.errorText}>{error}</div>}
@@ -352,7 +363,9 @@ function Homepage({ userId }) {
       <button
         style={styles.logout}
         onClick={() => {
-          localStorage.clear();
+          localStorage.removeItem("userId");
+          localStorage.removeItem("name");
+          localStorage.removeItem("sessionStart");
           window.location.reload();
         }}
       >

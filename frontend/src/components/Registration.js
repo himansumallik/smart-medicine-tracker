@@ -20,6 +20,13 @@ function Registration({ onRegister }) {
       return;
     }
 
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -37,8 +44,14 @@ function Registration({ onRegister }) {
 
       if (data.userId) {
         localStorage.setItem("userId", data.userId);
-        localStorage.setItem("name", name);
+        localStorage.setItem("name", data.name);
+        localStorage.setItem("sessionStart", Date.now().toString());
         onRegister(data.userId);
+        
+        // Show welcome back message for existing users
+        if (data.existing) {
+          alert(`Welcome back, ${data.name}! Your medicines are loaded.`);
+        }
       } else {
         setError("Registration failed. Please try again.");
       }
@@ -137,7 +150,7 @@ function Registration({ onRegister }) {
         <div style={styles.icon}>💊</div>
         
         <h1 style={styles.title}>Smart Medicine Tracker</h1>
-        <p style={styles.subtitle}>Your personal health companion</p>
+        <p style={styles.subtitle}>Sign in or create your account</p>
 
         {error && <div style={styles.errorText}>{error}</div>}
 
@@ -171,7 +184,7 @@ function Registration({ onRegister }) {
             e.target.style.boxShadow = "none";
           }}
         >
-          {loading ? "Creating Your Account..." : "Get Started"}
+          {loading ? "Signing you in..." : "Continue"}
         </button>
 
         <p style={styles.footerText}>

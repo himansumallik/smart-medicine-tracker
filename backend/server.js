@@ -19,12 +19,41 @@ app.post("/register", async (req, res) => {
   const { name, email } = req.body;
 
   try {
-    const userRef = await db.collection("users").add({
-      name,
-      email,
-    });
+    // Check if user already exists
+    const existingUser = await db.collection("users")
+      .where("email", "==", email)
+      .limit(1)
+      .get();
 
-    res.json({ message: "User registered", userId: userRef.id });
+    if (!existingUser.empty) {
+      // User exists, update last login and return existing user data
+      const userDoc = existingUser.docs[0];
+      await db.collection("users").doc(userDoc.id).update({
+        lastLogin: new Date()
+      });
+      
+      res.json({
+        message: "User logged in",
+        userId: userDoc.id,
+        name: userDoc.data().name,
+        existing: true
+      });
+    } else {
+      // Create new user
+      const userRef = await db.collection("users").add({
+        name,
+        email,
+        createdAt: new Date(),
+        lastLogin: new Date()
+      });
+
+      res.json({
+        message: "User registered",
+        userId: userRef.id,
+        name: name,
+        existing: false
+      });
+    }
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
