@@ -81,8 +81,9 @@ function App() {
   // NOTIFICATION
   const showNotification = (medicine) => {
     if (Notification.permission === "granted") {
-      new Notification("💊 Reminder", {
-        body: `Take ${medicine.name} (${medicine.dosage})`,
+      new Notification("💊 Medicine Reminder", {
+        body: `Time to take ${medicine.name} (${medicine.dosage})`,
+        icon: "https://cdn-icons-png.flaticon.com/512/2966/2966481.png"
       });
     }
   };
@@ -96,17 +97,21 @@ function App() {
       const now = new Date();
 
       medicines.forEach((med) => {
-        const [h, m] = med.time.split(":");
+        if (med.status === "taken") return;
 
-        if (
-          now.getHours() === h &&
-          now.getMinutes() === m &&
-          med.status !== "taken"
-        ) {
+        const [h, m] = med.time.split(":").map(Number);
+
+        const medTime = new Date();
+        medTime.setHours(h, m, 0, 0);
+
+        const diff = now - medTime;
+
+        // 🔥 Trigger if within 0–59 seconds after time
+        if (diff >= 0 && diff < 60000) {
           showNotification(med);
         }
       });
-    }, 60000);
+    }, 10000); // check every 10 sec
 
     return () => clearInterval(interval);
   }, [medicines]);
