@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 function Homepage({ userId }) {
   const [medName, setMedName] = useState("");
@@ -11,7 +11,7 @@ function Homepage({ userId }) {
   const API = process.env.REACT_APP_API_URL;
 
   // GET MEDICINES
-  const getMedicines = async () => {
+  const getMedicines = useCallback(async () => {
     try {
       const res = await fetch(`${API}/medicines/${userId}`);
       if (!res.ok) throw new Error("Failed to load medicines");
@@ -21,12 +21,12 @@ function Homepage({ userId }) {
     } catch (err) {
       setError("Error loading medicines: " + err.message);
     }
-  };
+  }, [API, userId]);
 
   // Load medicines on mount
   useEffect(() => {
     getMedicines();
-  }, [userId]);
+  }, [getMedicines]);
 
   // ADD MEDICINE
   const addMedicine = async () => {
