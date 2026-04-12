@@ -11,8 +11,8 @@ function App() {
 
   const [medicines, setMedicines] = useState([]);
 
-const API = "https://medicine-tracker-backend-g4ox.onrender.com";
-  // REGISTER
+  const API = process.env.REACT_APP_API_URL;  // REGISTER
+
   const register = async () => {
     const res = await fetch(`${API}/register`, {
       method: "POST",
@@ -99,8 +99,8 @@ const API = "https://medicine-tracker-backend-g4ox.onrender.com";
         const [h, m] = med.time.split(":");
 
         if (
-          now.getHours() == h &&
-          now.getMinutes() == m &&
+          now.getHours() === h &&
+          now.getMinutes() === m &&
           med.status !== "taken"
         ) {
           showNotification(med);
