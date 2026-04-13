@@ -8,60 +8,47 @@ function Homepage({ userId }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const API = process.env.REACT_APP_API_URL;
+  const API = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
-  // GET MEDICINES
   const getMedicines = useCallback(async () => {
     try {
       const res = await fetch(`${API}/medicines/${userId}`);
       if (!res.ok) throw new Error("Failed to load medicines");
       const data = await res.json();
-      setMedicines(data);
+      const formatted = data.map((m) => ({ ...m, id: m.medicineId }));
+      setMedicines(formatted);
       setError("");
     } catch (err) {
       setError("Error loading medicines: " + err.message);
     }
   }, [API, userId]);
 
-  // Load medicines on mount
-  useEffect(() => {
-    getMedicines();
-  }, [getMedicines]);
+  useEffect(() => { getMedicines(); }, [getMedicines]);
 
-  // ADD MEDICINE
   const addMedicine = async () => {
     if (!medName.trim() || !dosage.trim() || !time) {
       setError("Please fill all fields");
       return;
     }
-
     setLoading(true);
     setError("");
-
     try {
       const res = await fetch(`${API}/add-medicine`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, name: medName, dosage, time }),
       });
-
       if (!res.ok) throw new Error("Failed to add medicine");
-
-      setMedName("");
-      setDosage("");
-      setTime("");
+      setMedName(""); setDosage(""); setTime("");
       getMedicines();
     } catch (err) {
       setError("Error adding medicine: " + err.message);
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
-  // MARK TAKEN
-  const markTaken = async (id) => {
+  const markTaken = async (medicineId) => {
     try {
-      const res = await fetch(`${API}/mark-taken/${id}`, { method: "PUT" });
+      const res = await fetch(`${API}/mark-taken/${userId}/${medicineId}`, { method: "PUT" });
       if (!res.ok) throw new Error("Failed to mark as taken");
       getMedicines();
     } catch (err) {
@@ -69,24 +56,19 @@ function Homepage({ userId }) {
     }
   };
 
-  // STATUS LOGIC
   const getStatus = (med) => {
     if (med.status === "taken") return "taken";
-
     const now = new Date();
     const [h, m] = med.time.split(":").map(Number);
     const medTime = new Date();
     medTime.setHours(h, m, 0, 0);
-
     return now > medTime ? "missed" : "pending";
   };
 
-  // DASHBOARD DATA
   const total = medicines.length;
   const taken = medicines.filter(m => getStatus(m) === "taken").length;
   const missed = medicines.filter(m => getStatus(m) === "missed").length;
 
-  // NOTIFICATION
   const showNotification = (medicine) => {
     if (Notification.permission === "granted") {
       new Notification("💊 Medicine Reminder", {
@@ -97,10 +79,7 @@ function Homepage({ userId }) {
   };
 
   useEffect(() => {
-    if (Notification.permission !== "granted") {
-      Notification.requestPermission();
-    }
-
+    if (Notification.permission !== "granted") Notification.requestPermission();
     const interval = setInterval(() => {
       const now = new Date();
       medicines.forEach((med) => {
@@ -109,268 +88,231 @@ function Homepage({ userId }) {
         const medTime = new Date();
         medTime.setHours(h, m, 0, 0);
         const diff = now - medTime;
-
-        if (diff >= 0 && diff < 60000) {
-          showNotification(med);
-        }
+        if (diff >= 0 && diff < 60000) showNotification(med);
       });
     }, 10000);
-
     return () => clearInterval(interval);
   }, [medicines]);
 
+  // --- MODERNIZED UI STYLES ---
   const styles = {
     container: {
-      maxWidth: "800px",
-      margin: "40px auto",
-      padding: "20px",
-      background: "linear-gradient(135deg, #f0f4f8 0%, #e8f0f7 100%)",
+      maxWidth: "900px",
+      margin: "0 auto",
+      padding: "40px 20px",
+      fontFamily: "'Inter', 'Segoe UI', sans-serif",
+      backgroundColor: "#f8fafc",
       minHeight: "100vh",
-      fontFamily: "'Segoe UI', Arial, sans-serif",
     },
     header: {
-      textAlign: "center",
-      marginBottom: "30px",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: "40px",
+      background: "white",
+      padding: "24px",
+      borderRadius: "20px",
+      boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)",
     },
     title: {
-      fontSize: "28px",
-      color: "#1a3c5e",
-      margin: "0",
-    },
-    welcome: {
-      color: "#555",
-      fontSize: "18px",
-      marginTop: "8px",
-    },
-    sessionInfo: {
-      fontSize: "14px",
-      color: "#777",
-      margin: "5px 0 20px 0",
-      fontStyle: "italic",
-    },
-    dashboard: {
+      fontSize: "24px",
+      color: "#0f172a",
+      margin: 0,
       display: "flex",
-      gap: "15px",
+      alignItems: "center",
+      gap: "10px",
+    },
+    welcome: { color: "#64748b", margin: "5px 0 0 0", fontSize: "14px" },
+    dashboard: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+      gap: "20px",
       marginBottom: "30px",
     },
     statCard: {
-      flex: 1,
-      padding: "20px",
       background: "white",
+      padding: "20px",
       borderRadius: "16px",
-      boxShadow: "0 8px 25px rgba(0, 0, 0, 0.08)",
       textAlign: "center",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+      border: "1px solid #f1f5f9",
     },
-    statNumber: {
-      fontSize: "32px",
-      fontWeight: "bold",
-      margin: "8px 0 4px 0",
-    },
+    statNumber: { fontSize: "32px", fontWeight: "800", margin: "10px 0 0 0", color: "#1e293b" },
     card: {
       background: "white",
-      padding: "28px",
-      marginBottom: "25px",
-      borderRadius: "16px",
-      boxShadow: "0 8px 25px rgba(0, 0, 0, 0.08)",
+      padding: "30px",
+      borderRadius: "24px",
+      boxShadow: "0 10px 15px -3px rgba(0,0,0,0.05)",
+      marginBottom: "30px",
+      border: "1px solid #f1f5f9",
+    },
+    inputGroup: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr 150px",
+      gap: "15px",
+      marginBottom: "20px",
     },
     input: {
-      display: "block",
-      width: "100%",
-      padding: "14px 16px",
-      margin: "12px 0",
-      border: "2px solid #e0e0e0",
-      borderRadius: "10px",
-      fontSize: "16px",
+      padding: "12px 16px",
+      borderRadius: "12px",
+      border: "1px solid #e2e8f0",
+      fontSize: "15px",
       outline: "none",
+      transition: "border-color 0.2s",
+      backgroundColor: "#fbfcfd",
     },
     button: {
-      width: "100%",
-      padding: "14px",
-      background: "linear-gradient(135deg, #4CAF50, #45a049)",
+      background: "#3b82f6",
       color: "white",
       border: "none",
-      borderRadius: "10px",
-      fontSize: "17px",
+      padding: "12px 24px",
+      borderRadius: "12px",
       fontWeight: "600",
       cursor: "pointer",
-      marginTop: "8px",
-    },
-    buttonSecondary: {
-      padding: "10px 20px",
-      background: "#2196F3",
-      color: "white",
-      border: "none",
-      borderRadius: "8px",
-      cursor: "pointer",
-      fontSize: "15px",
+      transition: "all 0.2s",
     },
     medCard: {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      padding: "16px",
-      marginTop: "12px",
-      background: "#f8f9fa",
-      borderRadius: "12px",
-      border: "1px solid #eee",
+      padding: "20px",
+      borderRadius: "16px",
+      backgroundColor: "#ffffff",
+      border: "1px solid #f1f5f9",
+      marginBottom: "12px",
+      transition: "transform 0.2s",
     },
+    statusBadge: (status) => ({
+      display: "inline-block",
+      padding: "4px 12px",
+      borderRadius: "20px",
+      fontSize: "12px",
+      fontWeight: "700",
+      textTransform: "uppercase",
+      backgroundColor: status === "taken" ? "#dcfce7" : status === "missed" ? "#fee2e2" : "#fef3c7",
+      color: status === "taken" ? "#15803d" : status === "missed" ? "#b91c1c" : "#b45309",
+    }),
     smallButton: {
-      background: "#4CAF50",
-      color: "white",
+      background: "#f1f5f9",
+      color: "#475569",
       border: "none",
       padding: "8px 16px",
       borderRadius: "8px",
-      cursor: "pointer",
-      fontSize: "14px",
-    },
-    logout: {
-      width: "100%",
-      padding: "14px",
-      background: "#f44336",
-      color: "white",
-      border: "none",
-      borderRadius: "10px",
-      fontSize: "16px",
       fontWeight: "600",
       cursor: "pointer",
+      fontSize: "13px",
+    },
+    logout: {
       marginTop: "20px",
+      background: "transparent",
+      color: "#94a3b8",
+      border: "none",
+      cursor: "pointer",
+      fontSize: "14px",
+      textDecoration: "underline"
     },
     errorText: {
-      color: "#e74c3c",
-      backgroundColor: "#fdf2f2",
+      backgroundColor: "#fef2f2",
+      color: "#dc2626",
       padding: "12px",
-      borderRadius: "8px",
+      borderRadius: "12px",
       marginBottom: "20px",
-      textAlign: "center",
+      fontSize: "14px",
+      border: "1px solid #fee2e2"
     }
   };
 
   return (
     <div style={styles.container}>
-      <div style={styles.header}>
-        <h1 style={styles.title}>💊 Medicine Dashboard</h1>
-        <p style={styles.welcome}>
-          Welcome back, <strong>{localStorage.getItem("name")}</strong> 👋
-        </p>
-        {localStorage.getItem("sessionStart") && (
-          <p style={styles.sessionInfo}>
-            Session started: {new Date(parseInt(localStorage.getItem("sessionStart"))).toLocaleString()}
-          </p>
-        )}
-      </div>
+      {/* HEADER SECTION */}
+      <header style={styles.header}>
+        <div>
+          <h1 style={styles.title}>💊 MedTracker Pro</h1>
+          <p style={styles.welcome}>Hello, {localStorage.getItem("name")} • Mumbai Region</p>
+        </div>
+        <button 
+          style={{...styles.button, background: "#ef4444", padding: "8px 16px", fontSize: "13px"}}
+          onClick={() => { localStorage.clear(); window.location.reload(); }}
+        >
+          Sign Out
+        </button>
+      </header>
 
-      {error && <div style={styles.errorText}>{error}</div>}
+      {error && <div style={styles.errorText}>⚠️ {error}</div>}
 
-      {/* Dashboard Stats */}
+      {/* STATS SECTION */}
       <div style={styles.dashboard}>
         <div style={styles.statCard}>
-          <h4>Total Medicines</h4>
+          <div style={{color: "#64748b", fontSize: "13px", fontWeight: "600"}}>TOTAL</div>
           <p style={styles.statNumber}>{total}</p>
         </div>
         <div style={styles.statCard}>
-          <h4 style={{ color: "#2e7d32" }}>Taken</h4>
-          <p style={{ ...styles.statNumber, color: "#2e7d32" }}>{taken}</p>
+          <div style={{color: "#15803d", fontSize: "13px", fontWeight: "600"}}>TAKEN</div>
+          <p style={{ ...styles.statNumber, color: "#15803d" }}>{taken}</p>
         </div>
         <div style={styles.statCard}>
-          <h4 style={{ color: "#d32f2f" }}>Missed</h4>
-          <p style={{ ...styles.statNumber, color: "#d32f2f" }}>{missed}</p>
+          <div style={{color: "#b91c1c", fontSize: "13px", fontWeight: "600"}}>MISSED</div>
+          <p style={{ ...styles.statNumber, color: "#b91c1c" }}>{missed}</p>
         </div>
       </div>
 
-      {/* Add Medicine Card */}
+      {/* ADD MEDICINE SECTION */}
       <div style={styles.card}>
-        <h2>Add New Medicine</h2>
-        <input
-          style={styles.input}
-          placeholder="Medicine Name"
-          value={medName}
-          onChange={(e) => setMedName(e.target.value)}
-          disabled={loading}
-        />
-        <input
-          style={styles.input}
-          placeholder="Dosage (e.g. 1 tablet)"
-          value={dosage}
-          onChange={(e) => setDosage(e.target.value)}
-          disabled={loading}
-        />
-        <input
-          style={styles.input}
-          type="time"
-          value={time}
-          onChange={(e) => setTime(e.target.value)}
-          disabled={loading}
-        />
-        <button
-          style={styles.button}
-          onClick={addMedicine}
+        <h2 style={{fontSize: "18px", marginBottom: "20px", color: "#1e293b"}}>New Schedule</h2>
+        <div style={styles.inputGroup}>
+          <input style={styles.input} placeholder="Medicine Name" value={medName} onChange={(e) => setMedName(e.target.value)} />
+          <input style={styles.input} placeholder="Dosage (e.g. 1 pill)" value={dosage} onChange={(e) => setDosage(e.target.value)} />
+          <input style={styles.input} type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+        </div>
+        <button 
+          style={{...styles.button, width: "100%"}} 
+          onClick={addMedicine} 
           disabled={loading}
         >
-          {loading ? "Adding Medicine..." : "Add Medicine"}
+          {loading ? "Saving to Cloud..." : "Add to Schedule"}
         </button>
       </div>
 
-      {/* Medicines List */}
+      {/* LIST SECTION */}
       <div style={styles.card}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-          <h2>Your Medicines</h2>
-          <button style={styles.buttonSecondary} onClick={getMedicines}>
-            Refresh
-          </button>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "25px" }}>
+          <h2 style={{fontSize: "18px", color: "#1e293b"}}>Daily Timeline</h2>
+          <span style={{fontSize: "12px", color: "#94a3b8"}}>Auto-syncing with DynamoDB</span>
         </div>
 
         {medicines.length === 0 ? (
-          <p style={{ textAlign: "center", color: "#666", padding: "20px" }}>
-            No medicines added yet. Add your first medicine above.
-          </p>
+          <div style={{ textAlign: "center", padding: "40px", color: "#94a3b8" }}>
+            <div style={{fontSize: "40px", marginBottom: "10px"}}>Empty</div>
+            <p>Your medicine cabinet is empty. Add one above!</p>
+          </div>
         ) : (
           medicines.map((med) => {
             const status = getStatus(med);
             return (
               <div key={med.id} style={styles.medCard}>
-                <div>
-                  <strong style={{ fontSize: "17px" }}>{med.name}</strong>
-                  <p style={{ margin: "6px 0", color: "#555" }}>
-                    {med.dosage} • {med.time}
-                  </p>
-                  <span
-                    style={{
-                      color: status === "taken" ? "#2e7d32" : status === "missed" ? "#d32f2f" : "#f57c00",
-                      fontWeight: "600",
-                      textTransform: "uppercase",
-                      fontSize: "14px"
-                    }}
-                  >
-                    {status}
-                  </span>
+                <div style={{display: "flex", alignItems: "center", gap: "15px"}}>
+                  <div style={{fontSize: "24px"}}>{status === 'taken' ? '✅' : '🕒'}</div>
+                  <div>
+                    <strong style={{ fontSize: "16px", color: "#0f172a" }}>{med.name}</strong>
+                    <div style={{ fontSize: "13px", color: "#64748b", marginTop: "2px" }}>
+                      {med.dosage} • {med.time}
+                    </div>
+                  </div>
                 </div>
 
-                {status !== "taken" && (
-                  <button
-                    style={styles.smallButton}
-                    onClick={() => markTaken(med.id)}
-                  >
-                    Mark Taken
-                  </button>
-                )}
+                <div style={{display: "flex", alignItems: "center", gap: "15px"}}>
+                  <span style={styles.statusBadge(status)}>{status}</span>
+                  {status !== "taken" && (
+                    <button style={styles.button} onClick={() => markTaken(med.id)}>
+                      Take Now
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })
         )}
       </div>
-
-      {/* Logout Button */}
-      <button
-        style={styles.logout}
-        onClick={() => {
-          localStorage.removeItem("userId");
-          localStorage.removeItem("name");
-          localStorage.removeItem("sessionStart");
-          window.location.reload();
-        }}
-      >
-        Logout
-      </button>
     </div>
   );
 }

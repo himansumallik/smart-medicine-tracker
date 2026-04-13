@@ -20,7 +20,6 @@ function Registration({ onRegister }) {
       return;
     }
 
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError("Please enter a valid email address");
@@ -32,29 +31,36 @@ function Registration({ onRegister }) {
     try {
       const res = await fetch(`${API}/register`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({ name, email }),
       });
 
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-
       const data = await res.json();
 
+      if (!res.ok) {
+        throw new Error(data.message || "Registration failed");
+      }
+
+      // ✅ Store user session
       if (data.userId) {
         localStorage.setItem("userId", data.userId);
         localStorage.setItem("name", data.name);
         localStorage.setItem("sessionStart", Date.now().toString());
+
         onRegister(data.userId);
-        
-        // Show welcome back message for existing users
+
+        // AWS backend will send 'existing' flag
         if (data.existing) {
           alert(`Welcome back, ${data.name}! Your medicines are loaded.`);
+        } else {
+          alert(`Welcome, ${data.name}! Account created successfully.`);
         }
       } else {
         setError("Registration failed. Please try again.");
       }
+
     } catch (err) {
       setError(`Registration error: ${err.message}`);
       console.error("Registration error:", err);
