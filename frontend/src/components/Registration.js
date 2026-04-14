@@ -6,7 +6,7 @@ function Registration({ onRegister }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const API = process.env.REACT_APP_API_URL;
+  const API = "/api";
 
   const register = async () => {
     setError("");

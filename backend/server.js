@@ -15,6 +15,11 @@ const {
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(cors({
+    origin: 'https://medicine-tracker-frontend.netlify.app',
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 /* ---------------- AWS CONFIG ---------------- */
 const client = new DynamoDBClient({
