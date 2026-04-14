@@ -8,7 +8,7 @@ function Homepage({ userId }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const API = process.env.REACT_APP_API_URL || "http://43.205.130.165";
+  const API = "/api";
 
   const getMedicines = useCallback(async () => {
     try {
