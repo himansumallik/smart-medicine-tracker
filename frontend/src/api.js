@@ -1,4 +1,4 @@
-const BASE_URL = "http://13.60.219.80:5000";
+const BASE_URL = "http://43.205.130.165";
 
 export const addMedicine = async (data) => {
   return await fetch(`${BASE_URL}/add-medicine`, {
